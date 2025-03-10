@@ -1,0 +1,7 @@
+../Core/Src/main.c:66:5:uart_printf	2
+../Core/Src/main.c:80:6:DelayMs	2
+../Core/Src/main.c:92:5:main	5
+../Core/Src/main.c:165:6:SystemClock_Config	5
+../Core/Src/main.c:231:6:MPU_Config	1
+../Core/Src/main.c:277:6:HAL_TIM_PeriodElapsedCallback	2
+../Core/Src/main.c:294:6:Error_Handler	1

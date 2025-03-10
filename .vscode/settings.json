@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "*.cjson": "jsonc",
+        "*.wxss": "css",
+        "*.wxs": "javascript",
+        "focus.h": "c",
+        "cmdpc.h": "c",
+        "servomodule.h": "c",
+        "rangefindermodule.h": "c",
+        "imagemodule.h": "c",
+        "cmsis_os.h": "c",
+        "tcpecho.h": "c",
+        "usart.h": "c",
+        "main.h": "c",
+        "sys.h": "c",
+        "api.h": "c",
+        "opt.h": "c"
+    }
+}

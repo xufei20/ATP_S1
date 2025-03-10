@@ -1,0 +1,4 @@
+../BSP/Src/RangefinderModule.c:41:9:CheckSumRangefinder	2
+../BSP/Src/RangefinderModule.c:51:6:PackRangefinerData	19
+../BSP/Src/RangefinderModule.c:142:6:Send2RangefinderModule	4
+../BSP/Src/RangefinderModule.c:164:6:RevRangefinderData	3
