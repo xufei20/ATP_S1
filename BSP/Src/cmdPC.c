@@ -21,7 +21,8 @@ sifuFlag_t sifuFlag = {
     .motorEnableFlag = 0,
     .trackingDataValidFlag = 0,
     .FSMModeFlag = 0,
-    .controlEnableJingFlag = 0
+    .controlEnableJingFlag = 0,
+    .dgFlag = 0
 };
 
 
@@ -53,13 +54,17 @@ CommandTypedef_t CommandTypedef = {
     .manual_width = 0,
     .manual_height = 0,
     .clearerror = 0,
-    .x_offset = 0,
-    .y_offset = 0,
+    .x_offset = {0},
+    .y_offset = {0},
     .setTurnState = 0,
     .setFSMState = 0,
     .motorEnable = 0,
-    .laserAdjust = 0
-    };
+    .laserAdjust = 0,
+    .dgPitch = 0,
+    .dgYaw = 0,
+    .imgEnableCu = 0,
+    .imgEnableJing = 0
+};
 
 uint8_t manual_flag = 1;
 uint8_t expose_flag = 0;
@@ -73,6 +78,7 @@ uint8_t clearerror_flag = 0;
 uint8_t error_cnt = 0;
 uint8_t offset_flag = 0;
 uint8_t laserChange = 0;
+uint8_t imgFlag[2] = {0};
 
 void processControl()
 {
@@ -98,7 +104,7 @@ void processControl()
         stateChange = 0;
         if(CommandTypedef.go2Zero == 1)
         {
-            go2Zero();
+            // go2Zero(); //! 还没定下零位
         // HAL_GPIO_WritePin(RF_PWD_GPIO_Port,RF_PWD_Pin,GPIO_PIN_SET);
         // RangefinderDataFrameSend.FuncCode = SetMultiFreq;
         // cSetMultiFreq = 0x0A;
@@ -110,17 +116,17 @@ void processControl()
             standbyEnable();
             state = STATE_STANDBY;
         }
-        else if(CommandTypedef.scanEnable == 1)
+        else if(CommandTypedef.catchEnable == 1)
         {
-            scanEnable();
-            state = STATE_SCAN;
+            catchEnable();
+            state = STATE_CATCH;
         }
         else if(CommandTypedef.guideEnable == 1)
         {
             guideEnable();
             state = STATE_GUIDE;
         }
-        else if(CommandTypedef.standbyDisable == 1)
+        else if(CommandTypedef.standbyDisable == 1 && state == STATE_STANDBY)
         {
             standbyDisable();
             state = STATE_STANDBYDISABLE; // 待机状态进入待机禁止状态
@@ -128,7 +134,7 @@ void processControl()
     }
 
     // 伺服状态
-    if((servo_flag == 1) || (sifuFlag.turnStateFlag == 1) || (sifuFlag.FSMModeFlag == 1) || (sifuFlag.controlEnableJingFlag == 1) || (sifuFlag.motorEnableFlag == 1))
+    if((servo_flag == 1) || (sifuFlag.turnStateFlag == 1) || (sifuFlag.FSMModeFlag == 1) || (sifuFlag.controlEnableJingFlag == 1) || (sifuFlag.motorEnableFlag == 1) || (sifuFlag.dgFlag == 1))
     {
         if(servo_flag == 1 && state == STATE_GUIDE)
         {
@@ -137,11 +143,19 @@ void processControl()
             ServoDataSendTypedef.TargetPitch = CommandTypedef.turnPitch;
             ServoDataSendTypedef.TargetFSMYaw = CommandTypedef.FSM_Yaw;
             ServoDataSendTypedef.TargetFSMPitch = CommandTypedef.FSM_Pitch;
+            uart_printf("TargetYaw:%f,TargetPitch:%f,TargetFSMYaw:%f,TargetFSMPitch:%f\n",CommandTypedef.turnYaw.f,CommandTypedef.turnPitch.f,CommandTypedef.FSM_Yaw.f,CommandTypedef.FSM_Pitch.f);
         }
         if(sifuFlag.turnStateFlag == 1) // 设置转台工作模式
         {
             sifuFlag.turnStateFlag = 0;
             ServoDataSendTypedef.TurnMode = CommandTypedef.setTurnState;
+            if(ServoDataSendTypedef.TurnMode == TurntableTrackingState_GUIDE)
+            {
+                ServoDataSendTypedef.TargetPitch.f = ServoRevTypedef.ServoPitchPos.f;
+                ServoDataSendTypedef.TargetYaw.f = ServoRevTypedef.ServoYawPos.f;
+                ServoDataSendTypedef.TargetFSMYaw.f = ServoRevTypedef.FSMXPos.f;
+                ServoDataSendTypedef.TargetFSMPitch.f = ServoRevTypedef.FSMYPos.f;
+            }
         }
         if(sifuFlag.FSMModeFlag == 1)
         {
@@ -159,7 +173,13 @@ void processControl()
             sifuFlag.motorEnableFlag = 0;
             ServoDataSendTypedef.MotorEnable = CommandTypedef.motorEnable;
         }
-        uart_printf("TargetYaw:%f,TargetPitch:%f,TargetFSMYaw:%f,TargetFSMPitch:%f\n",CommandTypedef.turnYaw.f,CommandTypedef.turnPitch.f,CommandTypedef.FSM_Yaw.f,CommandTypedef.FSM_Pitch.f);
+        if(ServoDataSendTypedef.TurnMode == TurntableTrackingState_CLOSE_LOOP && sifuFlag.dgFlag == 1)
+        {
+            sifuFlag.dgFlag = 0;
+            ServoDataSendTypedef.Turntable_Pitch = CommandTypedef.dgPitch;
+            ServoDataSendTypedef.Turntable_Yaw = CommandTypedef.dgYaw;
+            // uart_printf("dgPitch:%d,dgYaw:%d\n",CommandTypedef.dgPitch,CommandTypedef.dgYaw);
+        }
         ServoDataSend(&ServoSendTypedef,&ServoDataSendTypedef);
     }
 
@@ -171,7 +191,7 @@ void processControl()
         SendFocusData(&SendFocusFrame);
     }
 
-    if(manual_flag == 1) //手动模式
+    if(manual_flag == 1 && state == STATE_CATCH) //手动模式
     {
         manual_flag = 0;
         if(CommandTypedef.manual_cj == 1)
@@ -182,7 +202,7 @@ void processControl()
             ImgSendDataTypedef_CU.ManualTracking.TrackingCenterY = CommandTypedef.manual_center_y;
             ImgSendDataTypedef_CU.ManualTracking.TrackingWidth = CommandTypedef.manual_width;
             ImgSendDataTypedef_CU.ManualTracking.TrackingHeight = CommandTypedef.manual_height;
-            // uart_printf("粗跟踪\n");
+            uart_printf("cu\n");
             Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
         }else if(CommandTypedef.manual_cj == 2){
             // TODO: 参数还需要改 这是粗相机的参数
@@ -194,17 +214,39 @@ void processControl()
             ImgSendDataTypedef_JING.ManualTracking.TrackingWidth = CommandTypedef.manual_width;
             ImgSendDataTypedef_JING.ManualTracking.TrackingHeight = CommandTypedef.manual_height;
             Send2ImgModule(&ImgSendTypedef_JING,&ImgSendDataTypedef_JING);
-            // uart_printf("精跟踪\n");
+            uart_printf("jing\n");
+        }
+        else if(CommandTypedef.manual_cj == 3)
+        {
+            ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
+            ImgSendTypedef_CU.FuncSubCode = STANDBY_MODE;
+            Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
+            ImgSendTypedef_JING.FuncCode = SETTING_TRACK;
+            ImgSendTypedef_JING.FuncSubCode = STANDBY_MODE;
+            Send2ImgModule(&ImgSendTypedef_JING,&ImgSendDataTypedef_JING);
+            uart_printf("out\r\n");
         }
 //                uart_printf("%d,%d",CommandTypedef.trackCuEnable,CommandTypedef.trackJingEnable);
         uart_printf("manual_cj:%d,TrackingCenterX:%d,TrackingCenterY:%d,TrackingWidth:%d,TrackingHeight:%d\n",CommandTypedef.manual_cj,CommandTypedef.manual_center_x,CommandTypedef.manual_center_y,CommandTypedef.manual_width,CommandTypedef.manual_height);
     }
-    else if(manual_flag == 2) //自动模式
+    else if(manual_flag == 2 && state == STATE_CATCH) //自动模式
     {
-
-        // ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
-        // ImgSendTypedef_CU.FuncSubCode = AUTO_TRACK;  //TODO: 数据来源于上位机 待修改
-        // Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
+        // manual_flag = 0;
+        if(CommandTypedef.imgEnableCu == 1 && imgFlag[0] == 1) //!:条件待修改
+        {
+            imgFlag[0] = 0;
+            ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
+            ImgSendTypedef_CU.FuncSubCode = AUTO_TRACK;
+            Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
+        }
+        if(CommandTypedef.imgEnableJing == 1 && imgFlag[1] == 1) //!:条件待修改
+        {
+            imgFlag[1] = 0;
+            ImgSendTypedef_JING.FuncCode = SETTING_TRACK;
+            ImgSendTypedef_JING.FuncSubCode = AUTO_TRACK;  //TODO: 数据来源于上位机 待修改
+            Send2ImgModule(&ImgSendTypedef_JING,&ImgSendDataTypedef_JING);
+        }
+        
     }
 
 
@@ -252,8 +294,8 @@ void processControl()
     {
         // 粗电视光学中心设置
         ImgSendTypedef_CU.FuncCode = SETTING_DEVICEPARAM;
-        ImgSendDataTypedef_CU.offsetX = CommandTypedef.x_offset;
-        ImgSendDataTypedef_CU.offsetY = CommandTypedef.y_offset;
+        ImgSendDataTypedef_CU.offsetX = CommandTypedef.x_offset.u32t * 1024 / 640;
+        ImgSendDataTypedef_CU.offsetY = CommandTypedef.y_offset.u32t * 1024 / 640;
         ImgSendTypedef_CU.FuncSubCode = OPTICAL_CENTER;
         Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
         offset_flag = 0;
@@ -273,12 +315,6 @@ void processControl()
     }
 
     // 清除故障
-//    if(clearerror_flag == 1){
-//    	clearerror_flag = 0;
-//    	ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
-//    	ImgSendTypedef_CU.FuncSubCode = AUTO_TRACK;
-//    	Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
-//    }
     if(clearerror_flag == 1 && error_cnt < 2)
     {
         error_cnt++;
@@ -292,14 +328,6 @@ void processControl()
             error_cnt = 0;
         }
         ServoDataSend(&ServoSendTypedef,&ServoDataSendTypedef);
-        // ServoDataSendTypedef.TrackingFaultCleanCu = 0x66;
-        // ServoDataSendTypedef.TrackingFaultCleanJing = 0x33;
-        // ServoDataSend(&ServoSendTypedef,&ServoDataSendTypedef);
-        // if(error_cnt == 2)
-        // {
-        //     clearerror_flag = 0;
-        //     error_cnt = 0;
-        // }
     }
 
 //     switch (state)
@@ -805,7 +833,7 @@ void go2Zero() //! 回零需要确定数值，可最后调整
     ServoDataSendTypedef.TargetYaw.f            = POS_INIT_YAW;
     ServoDataSendTypedef.TargetPitch.f          = POS_INIT_PITCH;
     // ServoDataSendTypedef.TrackingFaultCleanCu   = CUTRACKING_FAULT_CLEAN;
-    ServoDataSendTypedef.FSMMode                = FSM_ZERO;
+    ServoDataSendTypedef.FSMMode                = FSM_DIRECTION;
     ServoDataSendTypedef.ControlEnableJing      = ENABLE_JING;
     ServoDataSendTypedef.TargetFSMYaw.f         = FSM_INIT_YAW;
     ServoDataSendTypedef.TargetFSMPitch.f       = FSM_INIT_PITCH;
@@ -885,7 +913,7 @@ void standbyEnable()
     ServoDataSendTypedef.MotorEnable = MotorPowerOn;
     ServoDataSendTypedef.Turntable_Yaw = 0;
     ServoDataSendTypedef.Turntable_Pitch = 0;
-    ServoDataSendTypedef.TrackingDataValid = DATA_INVALID;
+    ServoDataSendTypedef.TrackingDataValid = DATA_VALID;
     ServoDataSendTypedef.TargetYaw.f = ServoRevTypedef.ServoYawPos.f;
     ServoDataSendTypedef.TargetPitch.f = ServoRevTypedef.ServoPitchPos.f;
     ServoDataSendTypedef.FSMMode = FSM_DIRECTION;
@@ -934,12 +962,13 @@ void guideEnable()
     ServoDataSendTypedef.TurnMode = TURNTABLE_GUIDE;
     ServoDataSendTypedef.MotorEnable = MotorPowerOn;
     ServoDataSendTypedef.ControlEnableJing = ENABLE_JING;
-    ServoDataSendTypedef.TargetPitch.f = CommandTypedef.turnPitch.f;
-    ServoDataSendTypedef.TargetYaw.f = CommandTypedef.turnYaw.f;
+    ServoDataSendTypedef.TargetPitch.f = ServoRevTypedef.ServoPitchPos.f;
+    ServoDataSendTypedef.TargetYaw.f = ServoRevTypedef.ServoYawPos.f;
     ServoDataSendTypedef.TrackingDataValid = DATA_VALID;
     ServoDataSendTypedef.FSMMode = FSM_DIRECTION;
-    ServoDataSendTypedef.TargetFSMYaw.f = CommandTypedef.FSM_Yaw.f;
-    ServoDataSendTypedef.TargetFSMPitch.f = CommandTypedef.FSM_Pitch.f;
+    ServoDataSendTypedef.ControlEnableJing = ENABLE_JING;
+    ServoDataSendTypedef.TargetFSMYaw.f = ServoRevTypedef.FSMXPos.f;
+    ServoDataSendTypedef.TargetFSMPitch.f = ServoRevTypedef.FSMYPos.f;
     ServoDataSend(&ServoSendTypedef,&ServoDataSendTypedef);
 
     // 粗电视引导  
@@ -1014,13 +1043,29 @@ void catchEnable()
     // ServoDataSend(&ServoSendTypedef,&ServoDataSendTypedef);
 
     // 粗电视捕获
-    ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
-    ImgSendTypedef_CU.FuncSubCode = AUTO_TRACK;  //TODO: 数据来源于上位机 待修改
-    ImgSendDataTypedef_CU.focusAdjust = 0; //TODO: 数据来源于上位机 待修改
-    Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
+    // ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
+    // ImgSendTypedef_CU.FuncSubCode = AUTO_TRACK;  //TODO: 数据来源于上位机 待修改
+    // ImgSendDataTypedef_CU.focusAdjust = 0; //TODO: 数据来源于上位机 待修改
+    // Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
 
     // 精电视捕获
-    ImgSendTypedef_JING.FuncCode = SETTING_TRACK;
-    ImgSendTypedef_JING.FuncSubCode = AUTO_TRACK;
-    Send2ImgModule(&ImgSendTypedef_JING,&ImgSendDataTypedef_JING);
+    // ImgSendTypedef_JING.FuncCode = SETTING_TRACK;
+    // ImgSendTypedef_JING.FuncSubCode = AUTO_TRACK;
+    // Send2ImgModule(&ImgSendTypedef_JING,&ImgSendDataTypedef_JING);
+
+    // 电机使能
+    ServoDataSendTypedef.TurnMode = TURNTABLE_GUIDE;
+    ServoDataSendTypedef.MotorEnable = MotorPowerOn;
+    ServoDataSendTypedef.Turntable_Yaw = 0;
+    ServoDataSendTypedef.Turntable_Pitch = 0;
+    ServoDataSendTypedef.TrackingDataValid = DATA_VALID;
+    ServoDataSendTypedef.TargetYaw.f = ServoRevTypedef.ServoYawPos.f;
+    ServoDataSendTypedef.TargetPitch.f = ServoRevTypedef.ServoPitchPos.f;
+    ServoDataSendTypedef.FSMMode = FSM_DIRECTION;
+    ServoDataSendTypedef.ControlEnableJing = ENABLE_JING;
+    ServoDataSendTypedef.TargetFSMYaw.f = ServoRevTypedef.FSMXPos.f;
+    ServoDataSendTypedef.TargetFSMPitch.f = ServoRevTypedef.FSMYPos.f;
+    ServoDataSendTypedef.ZeroCorrectionFSMX.f = 0.f;
+    ServoDataSendTypedef.ZeroCorrectionFSMY.f = 0.f;
+    ServoDataSend(&ServoSendTypedef,&ServoDataSendTypedef);
 }

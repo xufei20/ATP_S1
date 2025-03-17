@@ -32,6 +32,7 @@ ServoSendData_Typedef ServoDataSendTypedef = {
     .AngleJing = {0}
 };
 
+
 // // 中断中更新数值
 // uint8_t TurnMode = 0xB2; //定义转台工作模式
 // uint8_t MotorEnable = 0x66; //定义转台电机使能
@@ -208,11 +209,11 @@ void ServoDataSend(SendCmd_Typedef *SendType,ServoSendData_Typedef *ServoData)
 {
         ServoDataPack(SendType, ServoData);
         // 串口发送
-        for(int i = 0;i < 50;i++)
-        {
-            uart_printf("%02x ", SendType->data[i]);
-            // HAL_UART_Transmit(&huart5, SendType->data, 50, 0xffff);
-        }
+        // for(int i = 0;i < 50;i++)
+        // {
+        //     uart_printf("%02x ", SendType->data[i]);
+        //     // HAL_UART_Transmit(&huart5, SendType->data, 50, 0xffff);
+        // }
         // uart_printf("\r\n");
         if(errorflag)
         {

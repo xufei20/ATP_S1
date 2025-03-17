@@ -173,7 +173,8 @@ static void udpecho_thread(void *arg)
                 
                 static uint32_t temp[2];
                 static uint32_t exp_temp[2];
-                static int32_t offset[2];
+                static short dg_temp[2];
+                static uint32_t offset[2];
 
                 temp[0] = (recv_data[26]<<24) | (recv_data[25]<<16) | (recv_data[24]<<8) | recv_data[23];
                 if(CommandTypedef.zoomAdjust != temp[0])
@@ -234,6 +235,35 @@ static void udpecho_thread(void *arg)
                 }
                 CommandTypedef.exposureCU = exp_temp[0];
                 CommandTypedef.exposureJING = exp_temp[1];
+                dg_temp[0] = (recv_data[51] << 8) | recv_data[52];
+                dg_temp[1] = (recv_data[53] << 8) | recv_data[54];
+                if(CommandTypedef.dgPitch != dg_temp[0] || CommandTypedef.dgYaw != dg_temp[1])
+                {
+                    uart_printf("dgPitch:%d,dgYaw:%d\n",CommandTypedef.dgPitch,CommandTypedef.dgYaw);
+                    sifuFlag.dgFlag = 1;
+                }
+                CommandTypedef.dgPitch = (recv_data[52] << 8) | recv_data[51];
+                CommandTypedef.dgYaw = (recv_data[54] << 8) | recv_data[53];
+                
+                if(CommandTypedef.imgEnableCu != recv_data[55])
+                {
+                    imgFlag[0] = 1;
+                }
+                if(CommandTypedef.imgEnableJing != recv_data[56])
+                {
+                    imgFlag[1] = 1;
+                }
+                CommandTypedef.imgEnableCu = recv_data[55];
+                CommandTypedef.imgEnableJing = recv_data[56];
+                offset[0] = (recv_data[60] << 24) | (recv_data[59] << 16) | (recv_data[58] << 8) | recv_data[57];
+                offset[1] = (recv_data[64] << 24) | (recv_data[63] << 16) | (recv_data[62] << 8) | recv_data[61];
+                if(CommandTypedef.x_offset.u32t != offset[0] || CommandTypedef.y_offset.u32t != offset[1])
+                {
+                    offset_flag = 1;
+                }
+                CommandTypedef.x_offset.u32t = offset[0];
+                CommandTypedef.y_offset.u32t = offset[1];
+                uart_printf("x_offset:%ld,y_offset:%ld\n",CommandTypedef.x_offset.u32t,CommandTypedef.y_offset.u32t);
                 // CommandTypedef.trackJingEnable = 1;
                 // ----------------------------------------------
                 #else
@@ -450,8 +480,8 @@ static void WriteEthTask(void *thread_param)
             pcSend.XoffsetJing.f = ImgRecvDataTypedef_JING.Offset_X;
             pcSend.YoffsetJing.f = ImgRecvDataTypedef_JING.Offset_Y;
             pcSend.rangefinder.f = RangeFinderRevData.Distance;
-            // pcSend.ServoYaw.f = ServoRevTypedef.ServoYawPos.f;
-            pcSend.ServoYaw.f += 0.01;
+            pcSend.ServoYaw.f = ServoRevTypedef.ServoYawPos.f;
+            // pcSend.ServoYaw.f += 0.01;
             pcSend.ServoPitch.f = ServoRevTypedef.ServoPitchPos.f;
             // pcSend.state = state;
             // pcSend.cuEnable = 0;
@@ -484,8 +514,8 @@ static void WriteEthTask(void *thread_param)
                     senddata[30] = bit(0);
                     break;
             }
-            senddata[31] = pcSend.cuEnable; //TODO: 还未赋值粗跟踪状态
-            senddata[32] = pcSend.jingEnable; //TODO: 还未赋值粗跟踪状态
+            senddata[31] = pcSend.cuEnable; 
+            senddata[32] = pcSend.jingEnable;
             
             pcSend.FSM_Yaw.f = ServoRevTypedef.FSMXPos.f;
             pcSend.FSM_Pitch.f = ServoRevTypedef.FSMYPos.f;
@@ -506,8 +536,8 @@ static void WriteEthTask(void *thread_param)
                 senddata[43+i] = pcSend.cuErrorCode[i];
                 senddata[45+i] = pcSend.jingErrorCode[i];
             }
-            senddata[47] = pcSend.cuOffsetState; //TODO: 还未赋值
-            senddata[48] = pcSend.jingOffsetState; //TODO: 还未赋值
+            senddata[47] = pcSend.cuOffsetState;
+            senddata[48] = pcSend.jingOffsetState; 
             // senddata[49] = TrackingFaultCodeCu.errorCode[0];
             // senddata[50] = TrackingFaultCodeCu.errorCode[1];
             // senddata[51] = TrackingFaultCodeJing.errorCode[0];

@@ -238,9 +238,17 @@ void StartDefaultTask(void const * argument)
 
 	HAL_GPIO_WritePin(RF_PWD_GPIO_Port,RF_PWD_Pin,GPIO_PIN_SET);
 	// go2init();
+	osDelay(1000);
+	RangefinderDataFrameSend.FuncCode = SetMultiFreq;
+	cSetMultiFreq = 0x0A;
+	Send2RangefinderModule(&RangefinderDataFrameSend);
 	osDelay(100);
+	RangefinderDataFrameSend.FuncCode = SetTarget;
+	cSetTarget = 0x01;
+	Send2RangefinderModule(&RangefinderDataFrameSend);
 //	osDelay(2000);
 	vTaskSuspend(mytaskHandle);
+
   /* Infinite loop */
 //	CommandTypedef.turnYaw.f = 30.f;
 //	CommandTypedef.turnPitch.f = 60.f;
@@ -304,7 +312,6 @@ void TurnTask(void const * argument)
 		 pcSend.cuErrorCode[0]             			  = rxdata_servo[3];
 		 pcSend.cuErrorCode[1]             			  = rxdata_servo[4];
 		 
-		 TrackingFaultCodeCu.errorCode[1]             = rxdata_servo[4];
 		 TrackingFaultCodeCu.CommunicationFault       = (rxdata_servo[3] & bit(0)) ? 1 : 0;
 		 TrackingFaultCodeCu.EncoderFault             = (rxdata_servo[3] & bit(1)) ? 1 : 0;
 		 TrackingFaultCodeCu.DriverFaultA             = (rxdata_servo[3] & bit(2)) ? 1 : 0;
@@ -331,9 +338,11 @@ void TurnTask(void const * argument)
 
 
 		 ServoRevTypedef.cCuOffsetState               =  rxdata_servo[17];
+		 pcSend.cuOffsetState = ServoRevTypedef.cCuOffsetState;
 		 ServoRevTypedef.CuOffset_X.s                 =  rxdata_servo[18] << 8 | rxdata_servo[19];
 		 ServoRevTypedef.CuOffset_Y.s                 =  rxdata_servo[20] << 8 | rxdata_servo[21];
 		 ServoRevTypedef.cJingOffsetState             =  rxdata_servo[22];
+		 pcSend.jingOffsetState = ServoRevTypedef.cJingOffsetState;
 		 ServoRevTypedef.cJingISOffsetState           =  rxdata_servo[23];
 		 ServoRevTypedef.JingOffset_X.s               =  rxdata_servo[24] << 8 | rxdata_servo[25];
 		 ServoRevTypedef.JingOffset_Y.s               =  rxdata_servo[26] << 8 | rxdata_servo[27];
@@ -443,14 +452,15 @@ void ImgCuTask(void const * argument)
 		ImgRecvDataTypedef_CU.code1.AutoTrack     = (rxdata_cu[3] & bit(2)) ? 1 : 0;
 		ImgRecvDataTypedef_CU.code1.ManualTrack   = (rxdata_cu[3] & bit(3)) ? 1 : 0;
 
-		uart2_printf("selfcheck:%d,standby:%d,autotrack:%d,manualtrack:%d\r\n",ImgRecvDataTypedef_CU.code1.SelfCheck,ImgRecvDataTypedef_CU.code1.Standby,ImgRecvDataTypedef_CU.code1.AutoTrack,ImgRecvDataTypedef_CU.code1.ManualTrack);
+		// uart2_printf("selfcheck:%d,standby:%d,autotrack:%d,manualtrack:%d\r\n",ImgRecvDataTypedef_CU.code1.SelfCheck,ImgRecvDataTypedef_CU.code1.Standby,ImgRecvDataTypedef_CU.code1.AutoTrack,ImgRecvDataTypedef_CU.code1.ManualTrack);
 		ImgRecvDataTypedef_CU.code2.CheckState    = (rxdata_cu[4] & bit(0)) ? 1 : 0;
 		ImgRecvDataTypedef_CU.code2.InitState     = (rxdata_cu[4] & bit(1)) ? 1 : 0;
 		ImgRecvDataTypedef_CU.code2.NormalTrack   = (rxdata_cu[4] & bit(2)) ? 1 : 0;
 		ImgRecvDataTypedef_CU.code2.RememberTrack = (rxdata_cu[4] & bit(3)) ? 1 : 0;
 		ImgRecvDataTypedef_CU.code2.TrackLose     = (rxdata_cu[4] & bit(4)) ? 1 : 0;
+		pcSend.cuEnable = ImgRecvDataTypedef_CU.code2.TrackLose;
 		
-		uart2_printf("checkstate:%d,initstate:%d,normaltrack:%d,remembertrack:%d,tracklose:%d\r\n",ImgRecvDataTypedef_CU.code2.CheckState,ImgRecvDataTypedef_CU.code2.InitState,ImgRecvDataTypedef_CU.code2.NormalTrack,ImgRecvDataTypedef_CU.code2.RememberTrack,ImgRecvDataTypedef_CU.code2.TrackLose);
+		// uart2_printf("checkstate:%d,initstate:%d,normaltrack:%d,remembertrack:%d,tracklose:%d\r\n",ImgRecvDataTypedef_CU.code2.CheckState,ImgRecvDataTypedef_CU.code2.InitState,ImgRecvDataTypedef_CU.code2.NormalTrack,ImgRecvDataTypedef_CU.code2.RememberTrack,ImgRecvDataTypedef_CU.code2.TrackLose);
 
 		ImgRecvDataTypedef_CU.WorkState           = rxdata_cu[5];
 
@@ -509,6 +519,7 @@ void ImgJingTask(void const * argument)
 	        ImgRecvDataTypedef_JING.code2.NormalTrack   = (rxdata_jing[4] & bit(2)) ? 1 : 0;
 	        ImgRecvDataTypedef_JING.code2.RememberTrack = (rxdata_jing[4] & bit(3)) ? 1 : 0;
 	        ImgRecvDataTypedef_JING.code2.TrackLose     = (rxdata_jing[4] & bit(4)) ? 1 : 0;
+			pcSend.jingEnable = ImgRecvDataTypedef_JING.code2.TrackLose;
 
 	        ImgRecvDataTypedef_JING.WorkState           = rxdata_jing[5];
 
@@ -612,7 +623,8 @@ void RangefinderTask(void const * argument)
 		          }break;
 		          case MultiMeasure:{
 		            RangeFinderRevData.Distance   = rxdata_rangefinder[6] * 256 + rxdata_rangefinder[7] + rxdata_rangefinder[8] * 0.1;
-		          }break;
+					pcSend.rangefinder.f = RangeFinderRevData.Distance;
+				}break;
 		          case DeviceError:{
 		            RangeFinderRevData.FPGAState  = rxdata_rangefinder[8] & bit(0) ? 1 : 0;
 		            RangeFinderRevData.RayState   = rxdata_rangefinder[8] & bit(1) ? 1 : 0;
@@ -624,7 +636,8 @@ void RangefinderTask(void const * argument)
 		          default:
 		            break;
 		        }
-				uart_printf("distance:%.2f\r\n",RangeFinderRevData.Distance);
+				// uart_printf("distance:%.2f\r\n",RangeFinderRevData.Distance);
+				uart_printf("%x,%x,%x,%.2f\n",rxdata_rangefinder[6],rxdata_rangefinder[7],rxdata_rangefinder[8],RangeFinderRevData.Distance);
 		//   char msg[128];
 		//         sprintf(msg,"distance = %.2f\r\n",RangeFinderRevData.Distance);
 		//         HAL_UART_Transmit_DMA(&huart5, (uint8_t*)msg, strlen(msg));

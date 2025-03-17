@@ -51,12 +51,16 @@ typedef struct _CommandTypedef
 	uint16_t manual_height;		//手动高度
 	uint8_t  manual_cj;			//判断粗精跟踪
 	// uint8_t laserAdjust;		//激光调节
-	int x_offset;				//x偏移
-	int y_offset;				//y偏移
+	u32_u8_t x_offset;				//x偏移
+	u32_u8_t y_offset;				//y偏移
 	uint8_t state;				//状态
 	uint8_t setTurnState;		//设置伺服状态
 	uint8_t setFSMState;		//设置快反镜状态
 	uint8_t motorEnable;		//电机使能
+	short dgPitch;
+	short dgYaw;
+	uint8_t imgEnableCu;
+	uint8_t imgEnableJing;
 }CommandTypedef_t;
 
 typedef struct sifu_t
@@ -66,6 +70,7 @@ typedef struct sifu_t
 	uint8_t trackingDataValidFlag; //引导数据有效
 	uint8_t FSMModeFlag; //快反镜模式
 	uint8_t controlEnableJingFlag; //精电视控制使能
+	uint8_t dgFlag;
 }sifuFlag_t;
 
 
@@ -110,4 +115,5 @@ extern CommandTypedef_t CommandTypedef;
 extern uint8_t stateChange;
 extern sifuFlag_t sifuFlag;
 extern uint8_t laserChange;
+extern uint8_t imgFlag[2];
 #endif /* INC_CMDPC_H_ */

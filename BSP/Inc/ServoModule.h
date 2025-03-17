@@ -121,7 +121,6 @@ typedef enum
 
 typedef struct _TrackingFaultCu_Typedef
 {
-    uint8_t errorCode[2];
     uint8_t CommunicationFault; //总控通信故障
     uint8_t EncoderFault; //编码器故障
     uint8_t DriverFaultA; //驱动器A故障
@@ -140,7 +139,6 @@ typedef struct _TrackingFaultCu_Typedef
 
 typedef struct _TrackingFaultJing_Typedef
 {
-    uint8_t errorCode[2];
     uint8_t FSMControlOverLimitX;//快反镜控制量X轴超限
     uint8_t FSMControlOverLimitY;//快反镜控制量Y轴超限
     uint8_t FSMPositionOverLimitX;//快反镜位置X轴超限
@@ -189,8 +187,8 @@ typedef struct ServoSendData
 {
     uint8_t TurnMode; //定义转台工作模式
     uint8_t MotorEnable; //定义转台电机使能
-    int16_t Turntable_Yaw; //定义单杆方位 -2048~2048
-    int16_t Turntable_Pitch; //定义单杆俯仰 -2048~2048
+    short Turntable_Yaw; //定义单杆方位 -2048~2048
+    short Turntable_Pitch; //定义单杆俯仰 -2048~2048
     uint8_t TrackingDataValid; //定义引导数据有效
     f32_u8_t TargetYaw; //定义目标方位位置 0-360°
     f32_u8_t TargetPitch; //定义目标俯仰位置 0-80°
