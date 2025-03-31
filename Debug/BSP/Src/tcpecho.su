@@ -1,7 +1,7 @@
 ../BSP/Src/tcpecho.c:62:13:udpecho_thread	32	static
-../BSP/Src/tcpecho.c:441:13:WriteEthTask	40	static
-../BSP/Src/tcpecho.c:575:6:udpecho_init	16	static
-../BSP/Src/tcpecho.c:590:13:client	24	static
-../BSP/Src/tcpecho.c:656:6:client_init	16	static
-../BSP/Src/tcpecho.c:665:2:tcpecho_thread	88	static
-../BSP/Src/tcpecho.c:746:2:tcpecho_init	16	static
+../BSP/Src/tcpecho.c:442:13:WriteEthTask	40	static
+../BSP/Src/tcpecho.c:576:6:udpecho_init	16	static
+../BSP/Src/tcpecho.c:591:13:client	24	static
+../BSP/Src/tcpecho.c:657:6:client_init	16	static
+../BSP/Src/tcpecho.c:666:2:tcpecho_thread	88	static
+../BSP/Src/tcpecho.c:747:2:tcpecho_init	16	static

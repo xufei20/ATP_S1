@@ -1,8 +1,8 @@
 ../BSP/Src/cmdPC.c:83:6:processControl	40	static
-../BSP/Src/cmdPC.c:715:6:go2init	8	static
-../BSP/Src/cmdPC.c:825:6:go2Zero	8	static
-../BSP/Src/cmdPC.c:909:6:standbyEnable	8	static
-../BSP/Src/cmdPC.c:950:6:standbyDisable	8	static
-../BSP/Src/cmdPC.c:959:6:guideEnable	8	static
-../BSP/Src/cmdPC.c:987:6:scanEnable	8	static
-../BSP/Src/cmdPC.c:1028:6:catchEnable	8	static
+../BSP/Src/cmdPC.c:735:6:go2init	8	static
+../BSP/Src/cmdPC.c:845:6:go2Zero	8	static
+../BSP/Src/cmdPC.c:929:6:standbyEnable	8	static
+../BSP/Src/cmdPC.c:970:6:standbyDisable	8	static
+../BSP/Src/cmdPC.c:979:6:guideEnable	8	static
+../BSP/Src/cmdPC.c:1007:6:scanEnable	8	static
+../BSP/Src/cmdPC.c:1048:6:catchEnable	8	static

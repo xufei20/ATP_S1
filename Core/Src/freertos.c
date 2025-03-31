@@ -453,12 +453,12 @@ void ImgCuTask(void const * argument)
 		ImgRecvDataTypedef_CU.code1.ManualTrack   = (rxdata_cu[3] & bit(3)) ? 1 : 0;
 
 		// uart2_printf("selfcheck:%d,standby:%d,autotrack:%d,manualtrack:%d\r\n",ImgRecvDataTypedef_CU.code1.SelfCheck,ImgRecvDataTypedef_CU.code1.Standby,ImgRecvDataTypedef_CU.code1.AutoTrack,ImgRecvDataTypedef_CU.code1.ManualTrack);
-		ImgRecvDataTypedef_CU.code2.CheckState    = (rxdata_cu[4] & bit(0)) ? 1 : 0;
-		ImgRecvDataTypedef_CU.code2.InitState     = (rxdata_cu[4] & bit(1)) ? 1 : 0;
-		ImgRecvDataTypedef_CU.code2.NormalTrack   = (rxdata_cu[4] & bit(2)) ? 1 : 0;
-		ImgRecvDataTypedef_CU.code2.RememberTrack = (rxdata_cu[4] & bit(3)) ? 1 : 0;
-		ImgRecvDataTypedef_CU.code2.TrackLose     = (rxdata_cu[4] & bit(4)) ? 1 : 0;
-		pcSend.cuEnable = ImgRecvDataTypedef_CU.code2.TrackLose;
+		ImgRecvDataTypedef_CU.code2.CheckState    = (rxdata_cu[4] & bit(7)) ? 1 : 0;
+		ImgRecvDataTypedef_CU.code2.InitState     = (rxdata_cu[4] & bit(6)) ? 1 : 0;
+		ImgRecvDataTypedef_CU.code2.NormalTrack   = (rxdata_cu[4] & bit(5)) ? 1 : 0;
+		ImgRecvDataTypedef_CU.code2.RememberTrack = (rxdata_cu[4] & bit(4)) ? 1 : 0;
+		ImgRecvDataTypedef_CU.code2.TrackLose     = (rxdata_cu[4] & bit(3)) ? 1 : 0;
+		pcSend.cuEnable = ImgRecvDataTypedef_CU.code2.NormalTrack || ImgRecvDataTypedef_CU.code2.RememberTrack;
 		
 		// uart2_printf("checkstate:%d,initstate:%d,normaltrack:%d,remembertrack:%d,tracklose:%d\r\n",ImgRecvDataTypedef_CU.code2.CheckState,ImgRecvDataTypedef_CU.code2.InitState,ImgRecvDataTypedef_CU.code2.NormalTrack,ImgRecvDataTypedef_CU.code2.RememberTrack,ImgRecvDataTypedef_CU.code2.TrackLose);
 
@@ -514,12 +514,12 @@ void ImgJingTask(void const * argument)
 	        ImgRecvDataTypedef_JING.code1.AutoTrack     = (rxdata_jing[3] & bit(2)) ? 1 : 0;
 	        ImgRecvDataTypedef_JING.code1.ManualTrack   = (rxdata_jing[3] & bit(3)) ? 1 : 0;
 
-	        ImgRecvDataTypedef_JING.code2.CheckState    = (rxdata_jing[4] & bit(0)) ? 1 : 0;
-	        ImgRecvDataTypedef_JING.code2.InitState     = (rxdata_jing[4] & bit(1)) ? 1 : 0;
-	        ImgRecvDataTypedef_JING.code2.NormalTrack   = (rxdata_jing[4] & bit(2)) ? 1 : 0;
-	        ImgRecvDataTypedef_JING.code2.RememberTrack = (rxdata_jing[4] & bit(3)) ? 1 : 0;
-	        ImgRecvDataTypedef_JING.code2.TrackLose     = (rxdata_jing[4] & bit(4)) ? 1 : 0;
-			pcSend.jingEnable = ImgRecvDataTypedef_JING.code2.TrackLose;
+	        ImgRecvDataTypedef_JING.code2.CheckState    = (rxdata_jing[4] & bit(7)) ? 1 : 0;
+	        ImgRecvDataTypedef_JING.code2.InitState     = (rxdata_jing[4] & bit(6)) ? 1 : 0;
+	        ImgRecvDataTypedef_JING.code2.NormalTrack   = (rxdata_jing[4] & bit(5)) ? 1 : 0;
+	        ImgRecvDataTypedef_JING.code2.RememberTrack = (rxdata_jing[4] & bit(4)) ? 1 : 0;
+	        ImgRecvDataTypedef_JING.code2.TrackLose     = (rxdata_jing[4] & bit(3)) ? 1 : 0;
+			pcSend.jingEnable = ImgRecvDataTypedef_JING.code2.NormalTrack || ImgRecvDataTypedef_JING.code2.RememberTrack;
 
 	        ImgRecvDataTypedef_JING.WorkState           = rxdata_jing[5];
 

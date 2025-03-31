@@ -232,19 +232,39 @@ void processControl()
     else if(manual_flag == 2 && state == STATE_CATCH) //自动模式
     {
         // manual_flag = 0;
-        if(CommandTypedef.imgEnableCu == 1 && imgFlag[0] == 1) //!:条件待修改
+        if(imgFlag[0] == 1) //!:条件待修改
         {
+            if(CommandTypedef.imgEnableCu == 1)
+            {
+                ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
+                ImgSendTypedef_CU.FuncSubCode = AUTO_TRACK;
+                Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
+            }
+            else if(CommandTypedef.imgEnableCu == 0)
+            {
+                ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
+                ImgSendTypedef_CU.FuncSubCode = STANDBY_MODE;
+                Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
+            }
             imgFlag[0] = 0;
-            ImgSendTypedef_CU.FuncCode = SETTING_TRACK;
-            ImgSendTypedef_CU.FuncSubCode = AUTO_TRACK;
-            Send2ImgModule(&ImgSendTypedef_CU,&ImgSendDataTypedef_CU);
+            // uart_printf("cu\n");
         }
-        if(CommandTypedef.imgEnableJing == 1 && imgFlag[1] == 1) //!:条件待修改
+        if(imgFlag[1] == 1) //!:条件待修改
         {
+            if(CommandTypedef.imgEnableJing == 1)
+            {
+                ImgSendTypedef_JING.FuncCode = SETTING_TRACK;
+                ImgSendTypedef_JING.FuncSubCode = AUTO_TRACK;  //TODO: 数据来源于上位机 待修改
+                Send2ImgModule(&ImgSendTypedef_JING,&ImgSendDataTypedef_JING);
+            }
+            else if(CommandTypedef.imgEnableJing == 0)
+            {
+                ImgSendTypedef_JING.FuncCode = SETTING_TRACK;
+                ImgSendTypedef_JING.FuncSubCode = STANDBY_MODE;
+                Send2ImgModule(&ImgSendTypedef_JING,&ImgSendDataTypedef_JING);
+            }
             imgFlag[1] = 0;
-            ImgSendTypedef_JING.FuncCode = SETTING_TRACK;
-            ImgSendTypedef_JING.FuncSubCode = AUTO_TRACK;  //TODO: 数据来源于上位机 待修改
-            Send2ImgModule(&ImgSendTypedef_JING,&ImgSendDataTypedef_JING);
+            // uart_printf("jing\n");
         }
         
     }

@@ -2,8 +2,8 @@
 ../Core/Src/freertos.c:128:6:MX_FREERTOS_Init	1
 ../Core/Src/freertos.c:215:6:StartDefaultTask	97
 ../Core/Src/freertos.c:304:6:TurnTask	4
-../Core/Src/freertos.c:442:6:ImgCuTask	3
-../Core/Src/freertos.c:504:6:ImgJingTask	3
+../Core/Src/freertos.c:442:6:ImgCuTask	5
+../Core/Src/freertos.c:504:6:ImgJingTask	5
 ../Core/Src/freertos.c:560:6:FocusTask	3
 ../Core/Src/freertos.c:593:6:RangefinderTask	7
 ../Core/Src/freertos.c:653:6:HAL_UARTEx_RxEventCallback	134

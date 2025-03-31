@@ -191,6 +191,7 @@ static void udpecho_thread(void *arg)
                 }else if(CommandTypedef.manualEnable == 2)
                 {
                     manual_flag = 2;
+                    // uart_printf("manualEnable:%d\n",CommandTypedef.manualEnable);
                 }
                 if(CommandTypedef.clearerror == 1)
                 {
